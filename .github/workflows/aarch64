@@ -1,0 +1,82 @@
+name: Build DXVK 2.6.2 (aarch64 Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v2.6.2-arm64*"
+
+env:
+  DXVK_VERSION: "2.6.2"
+  # Pinned per doitsujin's own libdisplay-info mirror + commit used by the
+  # msys2 clangarm64 PKGBUILD you found for 2.7.1 (2.6.2 uses the same subproject fallback).
+  LIBDISPLAY_INFO_COMMIT: "275e6459c7ab1ddd4b125f28d0440716e4888078"
+
+jobs:
+  build:
+    # Native ARM64 Windows runner - no cross-compilation/emulation needed
+    runs-on: windows-11-arm
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout your dxvk fork at v2.6.2
+        uses: actions/checkout@v4
+        with:
+          # If your workflow lives in the dxvk fork itself, this checks out
+          # that fork automatically. Otherwise point `repository:` at
+          # <your-user>/dxvk explicitly.
+          ref: "v${{ env.DXVK_VERSION }}"
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup MSYS2 (CLANGARM64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          update: true
+          install: >-
+            git
+          pacboy: >-
+            toolchain:p
+            meson:p
+            ninja:p
+            glslang:p
+            spirv-headers:p
+            vulkan-headers:p
+
+      - name: Fetch libdisplay-info subproject
+        run: |
+          git clone https://github.com/doitsujin/libdisplay-info.git subprojects/libdisplay-info
+          git -C subprojects/libdisplay-info checkout "${{ env.LIBDISPLAY_INFO_COMMIT }}"
+
+      - name: Configure (meson)
+        run: |
+          MSYS2_ARG_CONV_EXCL="--prefix=" \
+          meson setup \
+            --prefix="${MINGW_PREFIX}" \
+            --buildtype=release \
+            --backend=ninja \
+            -Dbuild_id=true \
+            build-clangarm64
+
+      - name: Build
+        run: meson compile -C build-clangarm64
+
+      - name: Install to staging dir
+        run: |
+          meson install --skip-subprojects --destdir "$(pwd)/dist" -C build-clangarm64
+          # Also grab the licenses, mirroring the PKGBUILD's package() step
+          mkdir -p dist/licenses/dxvk dist/licenses/libdisplay-info
+          cp LICENSE dist/licenses/dxvk/
+          cp subprojects/libdisplay-info/LICENSE dist/licenses/libdisplay-info/
+
+      - name: Upload DLLs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dxvk-${{ env.DXVK_VERSION }}-aarch64
+          path: |
+            dist/**/bin/*.dll
+            dist/licenses/**
+          if-no-files-found: error
