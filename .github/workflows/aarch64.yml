@@ -48,6 +48,12 @@ jobs:
           git fetch upstream "refs/tags/v${{ env.DXVK_VERSION }}:refs/tags/v${{ env.DXVK_VERSION }}"
           git checkout -f "v${{ env.DXVK_VERSION }}"
 
+      - name: Patch libc++ empty-tuple emplace compiler bug (LLVM #167709)
+        run: |
+          perl -0pi -e 's/std::tuple\(\),\s*\n(\s*)std::tuple\(m_device, this, key, layout\)/std::tuple(key),\n$1std::tuple(m_device, this, key, layout)/' \
+            src/dxvk/dxvk_pipemanager.cpp
+          grep -n "std::tuple(key)" src/dxvk/dxvk_pipemanager.cpp
+
       - name: Fetch libdisplay-info subproject
         run: |
           git clone https://github.com/doitsujin/libdisplay-info.git subprojects/libdisplay-info
