@@ -27,12 +27,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Fetch and check out v2.6.2 from upstream
-        run: |
-          git remote add upstream "${{ env.UPSTREAM_REPO }}"
-          git fetch upstream "refs/tags/v${{ env.DXVK_VERSION }}:refs/tags/v${{ env.DXVK_VERSION }}"
-          git checkout "v${{ env.DXVK_VERSION }}"
-
       - name: Setup MSYS2 (CLANGARM64)
         uses: msys2/setup-msys2@v2
         with:
@@ -47,6 +41,12 @@ jobs:
             glslang:p
             spirv-headers:p
             vulkan-headers:p
+
+      - name: Fetch and check out v2.6.2 from upstream
+        run: |
+          git remote add upstream "${{ env.UPSTREAM_REPO }}"
+          git fetch upstream "refs/tags/v${{ env.DXVK_VERSION }}:refs/tags/v${{ env.DXVK_VERSION }}"
+          git checkout "v${{ env.DXVK_VERSION }}"
 
       - name: Fetch libdisplay-info subproject
         run: |
