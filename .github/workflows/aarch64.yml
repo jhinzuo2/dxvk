@@ -42,11 +42,11 @@ jobs:
             spirv-headers:p
             vulkan-headers:p
 
-      - name: Fetch and check out V2.6.2 from upstream
+      - name: Fetch and check out v2.6.2 from upstream
         run: |
           git remote add upstream "${{ env.UPSTREAM_REPO }}"
-          git fetch upstream "refs/tags/V${{ env.DXVK_VERSION }}:refs/tags/V${{ env.DXVK_VERSION }}"
-          git checkout "V${{ env.DXVK_VERSION }}"
+          git fetch upstream "refs/tags/v${{ env.DXVK_VERSION }}:refs/tags/v${{ env.DXVK_VERSION }}"
+          git checkout -f "v${{ env.DXVK_VERSION }}"
 
       - name: Fetch libdisplay-info subproject
         run: |
