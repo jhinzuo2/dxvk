@@ -8,6 +8,7 @@ on:
 
 env:
   DXVK_VERSION: "2.6.2"
+  UPSTREAM_REPO: "https://github.com/doitsujin/dxvk.git"
   # Pinned per doitsujin's own libdisplay-info mirror + commit used by the
   # msys2 clangarm64 PKGBUILD you found for 2.7.1 (2.6.2 uses the same subproject fallback).
   LIBDISPLAY_INFO_COMMIT: "275e6459c7ab1ddd4b125f28d0440716e4888078"
@@ -21,15 +22,19 @@ jobs:
         shell: msys2 {0}
 
     steps:
-      - name: Checkout your dxvk fork at v2.6.2
+      - name: Checkout your dxvk fork
         uses: actions/checkout@v4
         with:
-          # If your workflow lives in the dxvk fork itself, this checks out
-          # that fork automatically. Otherwise point `repository:` at
-          # <your-user>/dxvk explicitly.
-          ref: "v${{ env.DXVK_VERSION }}"
+          # Checks out your fork's default branch, full history so tag
+          # fetching below has somewhere to attach to.
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Fetch and check out v2.6.2 from upstream
+        run: |
+          git remote add upstream "${{ env.UPSTREAM_REPO }}"
+          git fetch upstream "refs/tags/v${{ env.DXVK_VERSION }}:refs/tags/v${{ env.DXVK_VERSION }}"
+          git checkout "v${{ env.DXVK_VERSION }}"
 
       - name: Setup MSYS2 (CLANGARM64)
         uses: msys2/setup-msys2@v2
